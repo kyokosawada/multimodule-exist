@@ -1,0 +1,20 @@
+types of pom - effective, simple
+clean - pre clean, post clean, explicit declared
+types of dependencies - transitive, direct, circular
+utilities pitfall -> dependencies
+1.0-SNAPSHOT
+major.minor-tags "snapshot" -> record of current build
+version tags
+version block, range -> sets
+declare versions in properties as variables
+settings.xml
+mirror 
+
+tutorialpoint
+fileService -> make interface
+service folder, create impl folder
+
+unittest
+search value -> change to return a value
+plugin -> test jakoko?
+100% coverage for service module
