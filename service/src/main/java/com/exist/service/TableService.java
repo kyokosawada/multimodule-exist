@@ -10,14 +10,13 @@ public interface TableService {
 
 	String searchValue(String searchTerm);
 
+    void editCell(int rowIndex, int columnIndex, String newKey, String newValue, String editMode);
 
-	void editCell(int rowIndex, int columnIndex, String newKey, String newValue, String editMode) throws IOException;
+    void addRow(int numberOfCells);
 
-	void addRow(int numberOfCells) throws IOException;
+    void sortRow(int rowIndex, String order);
 
-	void sortRow(int rowIndex, String order) throws IOException;
-
-	void resetTable(int rows, int columns) throws IOException;
+    void resetTable(int rows, int columns);
 
 	void printTable();
 

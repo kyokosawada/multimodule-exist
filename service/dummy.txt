@@ -1,2 +1,0 @@
-(search,term) (foo,bar) (abc,xyz)
-(xyz,abc) (something,else) (abc,term)

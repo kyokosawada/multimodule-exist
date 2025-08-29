@@ -1,34 +1,53 @@
 package com.exist.service;
 
 import com.exist.service.impl.TableServiceImpl;
+import com.exist.model.Table;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class TableServiceImplTest {
+
+    private static final Pattern CELL_PATTERN = Pattern.compile("\\([^,]+,[^)]+\\)");
 
     TableService tableService;
 
     @BeforeEach
-    void setUp() throws IOException, NoSuchFieldException, IllegalAccessException {
+    void setUp(){
         tableService = new TableServiceImpl();
         tableService.getTable().add(Arrays.asList("(abc,xyz)", "(foo,bar)", "(search,term)"));
         tableService.getTable().add(Arrays.asList("(abc,term)", "(xyz,abc)", "(something,else)"));
-        // Set fileName using reflection to avoid IO errors for saveFile
-        java.lang.reflect.Field fileNameField = TableServiceImpl.class.getDeclaredField("fileName");
-        fileNameField.setAccessible(true);
-        fileNameField.set(tableService, "dummy.txt");
     }
 
     @Test
-    void loadTableFromFile() {
+    void loadTableFromFile() throws Exception {
+        FileService mockFileService = mock(FileService.class);
+        String fileContent = "(abc,xyz) (foo,bar)\n(abc,term) (xyz,abc)";
+        when(mockFileService.loadFileContent("dummy.txt")).thenReturn(fileContent);
+
+        // Build expected table to return for parseFileToTable
+        Table expectedTable = new Table();
+        expectedTable.add(Arrays.asList("(abc,xyz)", "(foo,bar)"));
+        expectedTable.add(Arrays.asList("(abc,term)", "(xyz,abc)"));
+        when(mockFileService.parseFileToTable(fileContent)).thenReturn(expectedTable);
+
+        TableService ts = new TableServiceImpl(mockFileService);
+        ts.loadTableFromFile("dummy.txt");
+        Table t = ts.getTable();
+        assertEquals(2, t.size());
+        assertEquals(2, t.get(0).size());
+        assertEquals("(abc,xyz)", t.get(0).get(0));
+        assertEquals("(foo,bar)", t.get(0).get(1));
+        assertEquals(2, t.get(1).size());
+        assertEquals("(abc,term)", t.get(1).get(0));
+        assertEquals("(xyz,abc)", t.get(1).get(1));
     }
 
     @Test
@@ -49,14 +68,30 @@ class TableServiceImplTest {
 
     @Test
     void editCell() {
+        // Edit key only
+        tableService.editCell(0, 0, "editedKey", "", "key");
+        assertEquals("(editedKey,xyz)", tableService.getTable().get(0).get(0));
+        // Edit value only
+        tableService.editCell(0, 1, "", "editedValue", "value");
+        assertEquals("(foo,editedValue)", tableService.getTable().get(0).get(1));
+        // Edit both key and value
+        tableService.editCell(1, 2, "bothKey", "bothValue", "both");
+        assertEquals("(bothKey,bothValue)", tableService.getTable().get(1).get(2));
     }
 
     @Test
     void addRow() {
+        int initialRows = tableService.getTable().size();
+        tableService.addRow(2);
+        assertEquals(initialRows + 1, tableService.getTable().size());
+        assertEquals(2, tableService.getTable().get(initialRows).size());
+        for (String cell : tableService.getTable().get(initialRows)) {
+            assertTrue(CELL_PATTERN.matcher(cell).matches());
+        }
     }
 
     @Test
-    void sortRow() throws IOException {
+    void sortRow() {
         // Ascending first row
         tableService.sortRow(0, "asc");
         assertEquals("(abc,xyz)", tableService.getTable().get(0).get(0));
@@ -81,6 +116,14 @@ class TableServiceImplTest {
 
     @Test
     void resetTable() {
+        tableService.resetTable(3, 4);
+        assertEquals(3, tableService.getTable().size());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(4, tableService.getTable().get(i).size());
+            for (String cell : tableService.getTable().get(i)) {
+                assertTrue(CELL_PATTERN.matcher(cell).matches());
+            }
+        }
     }
 
     @Test

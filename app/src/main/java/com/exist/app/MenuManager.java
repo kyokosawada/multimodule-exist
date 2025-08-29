@@ -2,6 +2,8 @@ package com.exist.app;
 
 import com.exist.service.TableService;
 import com.exist.service.impl.TableServiceImpl;
+import com.exist.service.FileService;
+import com.exist.service.impl.FileServiceImpl;
 import com.exist.utilities.ScanUtils;
 
 
@@ -10,11 +12,14 @@ import java.io.IOException;
 public class MenuManager {
 
     private TableService tableService = new TableServiceImpl();
+    private FileService fileService = new FileServiceImpl();
+    private String fileName;
 
     public void startApplication(String fileName) {
         try {
             tableService.loadTableFromFile(fileName);
             tableService.printTable();
+            this.fileName = fileName; // Capture for later saves
         } catch (Exception e) {
             System.out.println("Error loading file: " + e.getMessage());
             System.exit(1);
@@ -106,6 +111,8 @@ public class MenuManager {
             }
 
             tableService.editCell(rowIndex, columnIndex, newKey, newValue, editMode);
+            // Save after edit
+            fileService.saveFile(tableService.getTable(), fileName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid number format. Please enter valid row and column numbers.");
@@ -129,6 +136,7 @@ public class MenuManager {
             }
 
             tableService.addRow(numberOfCells);
+            fileService.saveFile(tableService.getTable(), fileName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid number format. Please enter a valid number.");
@@ -155,6 +163,7 @@ public class MenuManager {
             }
 
             tableService.sortRow(rowIndex, order);
+            fileService.saveFile(tableService.getTable(), fileName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid number format. Please enter a valid row number.");
@@ -183,6 +192,7 @@ public class MenuManager {
             }
 
             tableService.resetTable(rows, columns);
+            fileService.saveFile(tableService.getTable(), fileName);
 
         } catch (NumberFormatException e) {
             System.out.println("Invalid number format. Please enter valid numbers for rows and columns.");

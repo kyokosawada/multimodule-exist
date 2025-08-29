@@ -13,6 +13,8 @@ import com.exist.service.FileService;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
+
 
 public class FileServiceImpl implements FileService {
 
@@ -39,7 +41,8 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public boolean fileExists(String fileName) {
-        return FileUtils.getFile(fileName).canRead();
+        File f = FileUtils.getFile(fileName);
+        return f.isFile() && f.canRead();
     }
 
     @Override
@@ -71,16 +74,15 @@ public class FileServiceImpl implements FileService {
         for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
             String line = lines[lineIndex];
 
-            if (!parseLineToRow(line, lineIndex).isEmpty()) {
-                table.add(parseLineToRow(line, lineIndex));
+            if (!parseLineToRow(line).isEmpty()) {
+                table.add(parseLineToRow(line));
             }
         }
 
         return table;
     }
 
-    @Override
-    public List<String> parseLineToRow(String line, int lineIndex) {
+    private List<String> parseLineToRow(String line) {
         List<String> rowCells = new ArrayList<>();
         Matcher matcher = CELL_PATTERN.matcher(line);
 

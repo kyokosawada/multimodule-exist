@@ -13,16 +13,22 @@ import java.io.IOException;
 public class TableServiceImpl implements TableService {
 
     private Table table = new Table();
-    private FileService fileService = new FileServiceImpl();
-    private String fileName;
+    private FileService fileService;
 
-    private static final int ASCII_STRING_LENGTH = 3;  
+    private static final int ASCII_STRING_LENGTH = 3;
+
+    public TableServiceImpl() {
+        this.fileService = new FileServiceImpl();
+    }
+
+    public TableServiceImpl(FileService fileService) {
+        this.fileService = fileService;
+    }
 
     @Override
     public void loadTableFromFile(String fileName) throws IOException {
         String content = fileService.loadFileContent(fileName);
         this.table = fileService.parseFileToTable(content);
-        this.fileName = fileName;
     }
 
     @Override
@@ -101,7 +107,7 @@ public class TableServiceImpl implements TableService {
     }
 
     @Override
-    public void editCell(int rowIndex, int columnIndex, String newKey, String newValue, String editMode) throws IOException {
+    public void editCell(int rowIndex, int columnIndex, String newKey, String newValue, String editMode) {
         String oldKey = extractKey(table.get(rowIndex).get(columnIndex));
         String oldValue = extractValue(table.get(rowIndex).get(columnIndex));
 
@@ -128,11 +134,10 @@ public class TableServiceImpl implements TableService {
         table.get(rowIndex).set(columnIndex, newCell);
 
         printTable();
-        fileService.saveFile(table, fileName);
     }
 
     @Override
-    public void addRow(int numberOfCells) throws IOException {
+    public void addRow(int numberOfCells) {
         List<String> newRow = new ArrayList<>();
 
         for (int i = 0; i < numberOfCells; i++) {
@@ -143,11 +148,10 @@ public class TableServiceImpl implements TableService {
 
         table.add(newRow);
         printTable();
-        fileService.saveFile(table, fileName);
     }
 
     @Override
-    public void sortRow(int rowIndex, String order) throws IOException {
+    public void sortRow(int rowIndex, String order) {
         switch (order.toLowerCase()) {
             case "asc":
                 Collections.sort(table.get(rowIndex));
@@ -158,11 +162,10 @@ public class TableServiceImpl implements TableService {
         }
 
         printTable();
-        fileService.saveFile(table, fileName);
     }
 
     @Override
-    public void resetTable(int rows, int columns) throws IOException {
+    public void resetTable(int rows, int columns) {
         table.clear();
 
         for (int i = 0; i < rows; i++) {
@@ -176,7 +179,6 @@ public class TableServiceImpl implements TableService {
         }
 
         printTable();
-        fileService.saveFile(table, fileName);
     }
 
     @Override

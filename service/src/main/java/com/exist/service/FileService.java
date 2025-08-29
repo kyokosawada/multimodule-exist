@@ -7,7 +7,7 @@ import com.exist.model.Table;
 
 public interface FileService {
 
-    public static final String DEFAULT_RESOURCE = "default.txt";
+    String DEFAULT_RESOURCE = "default.txt";
 
     String getFileName(String[] args) throws Exception;
 
@@ -16,8 +16,6 @@ public interface FileService {
     String loadFileContent(String fileName) throws IOException;
 
     Table parseFileToTable(String content);
-
-    List<String> parseLineToRow(String line, int lineIndex);
 
     String tableToString(Table table);
 
