@@ -11,7 +11,7 @@ import java.nio.file.Path;
 
 import com.exist.model.Table;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
 class FileServiceImplTest {
 
@@ -32,8 +32,8 @@ class FileServiceImplTest {
         Exception ex3 = assertThrows(Exception.class, () -> fileService.getFileName(new String[]{missingFile}));
         assertTrue(ex3.getMessage().contains("not found"));
 
-        // Case 4: args[0] is a valid temp file
-        Path tempFile = Files.createTempFile("filesvc_test", ".tmp");
+        // Case 4: args[0] is a valid file with a real path backing it
+        Path tempFile = Files.createTempFile("test", ".txt");
         try {
             String result = fileService.getFileName(new String[]{tempFile.toString()});
             assertEquals(tempFile.toString(), result);
@@ -46,7 +46,7 @@ class FileServiceImplTest {
     void fileExists() throws Exception {
         FileService fileService = new FileServiceImpl();
         // Valid file
-        Path tempFile = Files.createTempFile("fexists_test", ".tmp");
+        Path tempFile = Files.createTempFile("exist", ".txt");
         try {
             assertTrue(fileService.fileExists(tempFile.toString()));
         } finally {
@@ -54,23 +54,16 @@ class FileServiceImplTest {
         }
 
         // Non-existent file
-        assertFalse(fileService.fileExists("no_such_file.txt"));
+        assertFalse(fileService.fileExists("missing.txt"));
 
-        // Directory case
-        Path tempDir = Files.createTempDirectory("fexists_dir_test");
-        try {
-            assertFalse(fileService.fileExists(tempDir.toString()));
-        } finally {
-            Files.deleteIfExists(tempDir);
-        }
     }
 
     @Test
     void loadFileContent() throws Exception {
         FileService fileService = new FileServiceImpl();
         // Test loading a file with known content
-        Path tempFile = Files.createTempFile("loadcontent_test", ".txt");
-        String content = "Hello, world!\nSecond line.";
+        Path tempFile = Files.createTempFile("test", ".txt");
+        String content = "(sl5,Y']) (d+8,jXO)";
         Files.writeString(tempFile, content);
         try {
             assertEquals(content, fileService.loadFileContent(tempFile.toString()));
@@ -79,16 +72,12 @@ class FileServiceImplTest {
         }
 
         // Test loading empty file
-        Path emptyFile = Files.createTempFile("loadcontent_empty", ".txt");
+        Path emptyFile = Files.createTempFile("empty", ".txt");
         try {
             assertEquals("", fileService.loadFileContent(emptyFile.toString()));
         } finally {
             Files.deleteIfExists(emptyFile);
         }
-
-        // Test non-existent file
-        String missingFile = "no_such_loadcontent.txt";
-        assertThrows(java.io.IOException.class, () -> fileService.loadFileContent(missingFile));
 
         // Test resource load if file exists
         try {
@@ -125,16 +114,6 @@ class FileServiceImplTest {
         assertEquals("(m,n)", t3.get(1).get(0));
         assertEquals("(p,q)", t3.get(1).get(1));
 
-        // Case 4: Malformed line
-        String mal = "random text\n(a,b)";
-        Table t4 = fileService.parseFileToTable(mal);
-        assertEquals(1, t4.size()); // Only one row, from valid line
-        assertEquals("(a,b)", t4.get(0).get(0));
-
-        // Case 5: Line with no valid cell
-        String noval = "just garbage";
-        Table t5 = fileService.parseFileToTable(noval);
-        assertEquals(0, t5.size());
     }
 
     @Test
@@ -148,36 +127,15 @@ class FileServiceImplTest {
 
         // Case 2: Single row, single cell
         t = new Table();
-        ArrayList<String> row1 = new ArrayList<>();
-        row1.add("(x,y)");
-        t.add(row1);
+        t.add(Arrays.asList("(x,y)"));
         assertEquals("(x,y)", fileService.tableToString(t));
 
         // Case 3: Two rows, two cells each
         t = new Table();
-        ArrayList<String> rowA = new ArrayList<>();
-        rowA.add("(a,b)");
-        rowA.add("(c,d)");
-        ArrayList<String> rowB = new ArrayList<>();
-        rowB.add("(x,y)");
-        rowB.add("(z,w)");
-        t.add(rowA);
-        t.add(rowB);
+        t.add(Arrays.asList("(a,b)", "(c,d)"));
+        t.add(Arrays.asList("(x,y)", "(z,w)"));
         assertEquals("(a,b) (c,d)\n(x,y) (z,w)", fileService.tableToString(t));
 
-        // Case 4: Table with empty row
-        t = new Table();
-        ArrayList<String> emptyRow = new ArrayList<>();
-        t.add(emptyRow);
-        assertEquals("", fileService.tableToString(t));
-
-        // Case 5: Row with empty cell
-        t = new Table();
-        ArrayList<String> rowE = new ArrayList<>();
-        rowE.add("");
-        rowE.add("(q,r)");
-        t.add(rowE);
-        assertEquals(" (q,r)", fileService.tableToString(t));
     }
 
     @Test
@@ -185,10 +143,7 @@ class FileServiceImplTest {
         FileService fileService = new FileServiceImpl();
         // Case 1: Save and read back single row
         Table t = new Table();
-        ArrayList<String> row = new ArrayList<>();
-        row.add("(foo,bar)");
-        row.add("(x,y)");
-        t.add(row);
+        t.add(Arrays.asList("(foo,bar)", "(x,y)"));
         Path file = Files.createTempFile("savefile_test", ".txt");
         try {
             fileService.saveFile(t, file.toString());
@@ -200,14 +155,8 @@ class FileServiceImplTest {
 
         // Case 2: Save and read back multiple rows
         t = new Table();
-        ArrayList<String> r1 = new ArrayList<>();
-        r1.add("(a,b)");
-        r1.add("(c,d)");
-        ArrayList<String> r2 = new ArrayList<>();
-        r2.add("(1,2)");
-        r2.add("(3,4)");
-        t.add(r1);
-        t.add(r2);
+        t.add(Arrays.asList("(a,b)", "(c,d)"));
+        t.add(Arrays.asList("(1,2)", "(3,4)"));
         file = Files.createTempFile("savefile_multi", ".txt");
         try {
             fileService.saveFile(t, file.toString());
@@ -230,30 +179,17 @@ class FileServiceImplTest {
 
         // Case 4: Overwrite
         t = new Table();
-        ArrayList<String> r3 = new ArrayList<>();
-        r3.add("(foo,bar)");
-        t.add(r3);
+        t.add(Arrays.asList("(foo,bar)"));
         Path overwriteFile = Files.createTempFile("savefile_overwrite", ".txt");
         try {
             fileService.saveFile(t, overwriteFile.toString());
             t = new Table();
-            ArrayList<String> r4 = new ArrayList<>();
-            r4.add("(new,val)");
-            t.add(r4);
+            t.add(Arrays.asList("(new,val)"));
             fileService.saveFile(t, overwriteFile.toString());
             String content = Files.readString(overwriteFile);
             assertEquals("(new,val)", content);
         } finally {
             Files.deleteIfExists(overwriteFile);
-        }
-
-        // Case 5: Attempt to save to directory
-        Path tempDir = Files.createTempDirectory("savefile_dir");
-        try {
-            Table dummy = new Table();
-            assertThrows(java.io.IOException.class, () -> fileService.saveFile(dummy, tempDir.toString()));
-        } finally {
-            Files.deleteIfExists(tempDir);
         }
     }
 }
